@@ -2,56 +2,20 @@
 
 #[macro_use]
 extern crate rocket;
-#[macro_use]
-extern crate serde;
 
-use rocket::{
-    http::{ContentType, Status},
-    response::{self, Redirect, Responder},
-    Request, Response, Rocket, State,
-};
+pub mod types;
+
+use rocket::{http::Status, response::Redirect, Rocket, State};
 use rusqlite::Connection;
 use std::sync::Mutex;
 
-use rocket_contrib::json::{Json, JsonValue};
+use rocket_contrib::json::Json;
 use url::Url;
 
+use types::request::generate_request::GenerateRequest;
+use types::response::api_response::{internal_error, ApiResponse};
+
 type DbConn = Mutex<Connection>;
-
-#[derive(Serialize, Deserialize)]
-struct GenerateRequest {
-    link: String,
-}
-
-#[derive(Debug)]
-struct ApiResponse {
-    status: Status,
-    json: JsonValue,
-}
-
-impl ApiResponse {
-    pub fn new(status: Status, json: JsonValue) -> Self {
-        Self { status, json }
-    }
-}
-
-impl<'r> Responder<'r> for ApiResponse {
-    fn respond_to(self, request: &Request) -> response::Result<'r> {
-        Response::build_from(self.json.respond_to(&request).unwrap())
-            .status(self.status)
-            .header(ContentType::JSON)
-            .ok()
-    }
-}
-
-fn internal_error() -> ApiResponse {
-    ApiResponse::new(
-        Status::InternalServerError,
-        rocket_contrib::json!({
-            "status": "internal server error"
-        }),
-    )
-}
 
 #[post("/api/generate", format = "json", data = "<message>")]
 fn generate(
