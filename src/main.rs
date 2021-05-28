@@ -19,9 +19,9 @@ struct GenerateRequest {
 }
 
 fn internal_error() -> Response<'static> {
-    Response::build().status(
-        Status::InternalServerError
-    ).finalize()
+    Response::build()
+        .status(Status::InternalServerError)
+        .finalize()
 }
 
 #[post("/api/generate", format = "json", data = "<message>")]
@@ -35,7 +35,8 @@ fn generate(db_conn: State<DbConn>, message: Json<GenerateRequest>) -> Result<Js
         .execute(
             "INSERT INTO urls(shortened_id, original_url) VALUES(?, ?)",
             &[shortened_id.as_str(), link],
-        ).map_err(|_| internal_error())?;
+        )
+        .map_err(|_| internal_error())?;
     Ok(rocket_contrib::json!({
         "id": shortened_id.as_str(),
         "status": "ok",
