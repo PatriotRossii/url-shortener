@@ -14,6 +14,7 @@ use rusqlite::Connection;
 use std::sync::Mutex;
 
 use rocket_contrib::json::{Json, JsonValue};
+use url::Url;
 
 type DbConn = Mutex<Connection>;
 
@@ -58,6 +59,15 @@ fn generate(
     message: Json<GenerateRequest>,
 ) -> Result<ApiResponse, ApiResponse> {
     let link = message.link.as_str();
+    if Url::parse(link).is_err() {
+        return Err(ApiResponse::new(
+            Status::BadRequest,
+            rocket_contrib::json!({
+                "status": "invalid url"
+            }),
+        ));
+    }
+
     let shortened_id = uuid::Uuid::new_v4().to_string();
 
     db_conn
@@ -71,8 +81,8 @@ fn generate(
     Ok(ApiResponse::new(
         Status::Ok,
         rocket_contrib::json!({
-        "id": shortened_id.as_str(),
-        "status": "ok",
+            "id": shortened_id.as_str(),
+            "status": "ok",
         }),
     ))
 }
